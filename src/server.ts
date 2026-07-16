@@ -2,11 +2,13 @@
  * Local Development Server
  *
  * A simple HTTP server for testing your handlers locally.
+ * Not used in the Lambda/API Gateway deployment path.
  * Run with: pnpm dev
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { getItemHandler, createItemHandler } from './handlers/example.js';
+import { getItemHandler, createItemHandler, updateItemHandler, listItemsHandler } from './handlers/handlers.js';
+import { parse as parseQueryString } from 'querystring'; // Used to parse query strings in the listItemsHandler.
 
 const PORT = process.env.PORT || 3000;
 
@@ -36,14 +38,22 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   try {
     let result;
 
-    // Example routes - implement your own routing logic
-    if (method === 'GET' && url === '/api/items/test') {
-      result = await getItemHandler('test');
-    } else if (method === 'POST' && url === '/api/items') {
+    /**
+     * Route matching for the four implemented endpoints.
+     * More specific /api/items/:id paths are checked before the list route.
+     */
+    if (method === 'POST' && url === '/api/items') {
       result = await createItemHandler(parsedBody);
     } else if (method === 'GET' && url?.startsWith('/api/items/')) {
       const id = url.split('/').pop();
       result = await getItemHandler(id!);
+    } else if (method === 'PUT' && url?.startsWith('/api/items/')) {
+      const id = url.split('/').pop();
+      result = await updateItemHandler( id!, parsedBody );
+    } else if (method === 'GET' && url?.startsWith('/api/items')) {
+      const [, queryString] = url.split('?');
+      const query = queryString ? parseQueryString(queryString) : {};
+      result = await listItemsHandler(query);
     } else {
       result = {
         statusCode: 404,

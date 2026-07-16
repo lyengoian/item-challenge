@@ -1,6 +1,15 @@
 /**
- * Exam Item Types
+ * Exam item types.
+ *
+ * ItemStatus and SecurityLevel come from the Zod enums in validation.ts
+ * rather than being typed by hand, so the allowed values stay in sync.
  */
+
+import { z } from 'zod';
+import { StatusEnum, SecurityLevelEnum } from '../handlers/validation.js';
+
+export type ItemStatus = z.infer<typeof StatusEnum>;
+export type SecurityLevel = z.infer<typeof SecurityLevelEnum>;
 
 export interface ExamItem {
   id: string;
@@ -18,10 +27,10 @@ export interface ExamItem {
     created: number; // timestamp
     lastModified: number; // timestamp
     version: number;
-    status: string; // "draft", "review", "approved", "archived"
+    status: ItemStatus; // "draft", "review", "approved", "archived"
     tags: string[];
   };
-  securityLevel: string; // "standard", "secure", "highly-secure"
+  securityLevel: SecurityLevel; // "standard", "secure", "highly-secure"
 }
 
 export interface CreateItemRequest {
@@ -36,10 +45,10 @@ export interface CreateItemRequest {
   };
   metadata: {
     author: string;
-    status: string;
+    status: ItemStatus;
     tags: string[];
   };
-  securityLevel: string;
+  securityLevel: SecurityLevel;
 }
 
 export interface UpdateItemRequest {
@@ -48,12 +57,12 @@ export interface UpdateItemRequest {
   difficulty?: number;
   content?: Partial<ExamItem["content"]>;
   metadata?: Partial<ExamItem["metadata"]>;
-  securityLevel?: string;
+  securityLevel?: SecurityLevel;
 }
 
 export interface ListItemsQuery {
   limit?: number;
   offset?: number;
   subject?: string;
-  status?: string;
+  status?: ItemStatus;
 }

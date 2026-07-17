@@ -109,7 +109,7 @@ Validated with `cdk synth --context env=dev` and `cdk synth --context env=prod`.
 
 ## Trade-offs
 
-I deliberately prioritized basic CRUD (create, get, update, and list) because those are the paths every exam-item workflow needs first. Version and audit APIs are still TODOs, but the key design already supports them (`VERSION#` rows and a straightforward `Query`).
+I deliberately prioritized basic CRUD (create, get, update, and list) because those are the paths every exam-item workflow needs first. Version and audit APIs are unimplemented, but the key design already supports them (`VERSION#` rows and a straightforward `Query`).
 
 Implementing `DynamoDBStorage` was optional. The starter’s in-memory backend already supports local CRUD, including bumping `metadata.version` on update. I still built the DynamoDB layer so I could validate the single-table design against a real DynamoDB Local instance. That let me confirm `METADATA` + `VERSION#n` rows, the denormalized GSI `status` field, and that CDK’s `USE_DYNAMODB=true` path has a working storage implementation behind it. (`createVersion` / `getAuditTrail` remain unimplemented in DynamoDB until those API routes exist, but updates already append `VERSION#n` history as a side effect of normal edits.)
 

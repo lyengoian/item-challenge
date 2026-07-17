@@ -67,4 +67,4 @@ To run the same API against the real `DynamoDBStorage` implementation instead of
 2. Export `USE_DYNAMODB`, `DYNAMODB_TABLE_NAME`, `DYNAMODB_ENDPOINT`, and dummy AWS credentials.
 3. Run `pnpm dev` and use the same curls as in [API_TESTING.md](./API_TESTING.md).
 
-Full steps (create/reset table, env vars, curls) are in **API_TESTING.md -> Optional: DynamoDB Local**.
+Full steps (create/reset table, env vars, curls) are in [**API_TESTING.md -> Optional: DynamoDB Local**](./API_TESTING.md).

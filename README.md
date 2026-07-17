@@ -121,7 +121,7 @@ Please fork this repository and submit your completed solution by sharing your f
 
 ### Include the following in your submission:
 
-- Instructions on how to run your solution locally  
+- Instructions on how to run your solution locally: see [RUNNING_LOCALLY.md](./RUNNING_LOCALLY.md)
 - Include a brief `ARCHITECTURE.md` describing your system’s structure and key components  
 Good luck! We're excited to see your solution.
 

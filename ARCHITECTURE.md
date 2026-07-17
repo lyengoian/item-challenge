@@ -119,6 +119,7 @@ Implementing `DynamoDBStorage` was optional. The starter’s in-memory backend a
 
 **Testing**
 
+- How to run locally: see [RUNNING_LOCALLY.md](./RUNNING_LOCALLY.md).
 - Unit tests (`pnpm test`): 11 Vitest cases covering create/get/update/list. Success paths, 404s, validation 400s, version bump, and partial-update field preservation. Scoped via `include: ["src/**/*.{test,spec}.ts"]` in `vitest.config.ts` so CDK `cdk.out` / infra `node_modules` aren't picked up.
-- Manual smoke tests: see `API_TESTING.md` (in-memory by default).
+- Manual smoke tests: see [API_TESTING.md](./API_TESTING.md) (in-memory by default).
 - DynamoDB Local: table and `SubjectStatusIndex` GSI created manually, then verified end-to-end (create -> get -> update -> list) with `USE_DYNAMODB=true`. After create + two updates, a direct `aws dynamodb query` on the item’s PK showed four rows: `METADATA` (latest) plus immutable `VERSION#1`…`VERSION#3` with top-level `status` matching `metadata.status` on each row.

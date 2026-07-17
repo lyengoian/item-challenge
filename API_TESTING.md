@@ -1,7 +1,8 @@
 # API Testing Guide
 
-My manual smoke tests for the four implemented endpoints. Run `pnpm dev` first, then
-hit `http://localhost:3000` from a second terminal.
+Manual Curl smoke tests for the four implemented endpoints against `http://localhost:3000`.
+
+If you haven’t installed deps or started the server yet, follow [RUNNING_LOCALLY.md](./RUNNING_LOCALLY.md) first, then come back here.
 
 By default the server uses **in-memory storage**. To use DynamoDB storage
 locally, I used the optional setup below (with guidance from the `dynamodb.ts` file which also had setup instructions). The curl commands are the same either way.

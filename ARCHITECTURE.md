@@ -56,8 +56,8 @@ Defined with AWS CDK in `infrastructure/`.
 
 **API Gateway REST API.** Routes:
 
-- `POST /api/items`, `GET /api/items` → create / list Lambdas
-- `GET /api/items/{id}`, `PUT /api/items/{id}` → get / update Lambdas
+- `POST /api/items`, `GET /api/items` -> create / list Lambdas
+- `GET /api/items/{id}`, `PUT /api/items/{id}` -> get / update Lambdas
 
 **DynamoDB on-demand (`PAY_PER_REQUEST`).** Avoids guessing provisioned capacity. This fits the scenario of bursty exam-authoring traffic better than steady provisioned throughput. Generally recommended for unpredictable or spiky traffic, and ideal for apps with traffic that fluctuates wildly or has sudden, unexpected spikes, like flash sales, ticket releases, or an exam day.
 
@@ -99,8 +99,9 @@ Validated with `cdk synth --context env=dev` and `cdk synth --context env=prod`.
 
 **`securityLevel` (not enforced yet).** Present on the model (`standard` / `secure` / `highly-secure`) for future controls:
 
-- Authorization checks against requester
-- Separate access audit for highly-secure reads
+- Authorization checks against the requester's role/clearance before returning content
+- Separate access audit logging for highly-secure reads
+- Field-level encryption for sensitive fields like `content.correctAnswer` and `content.explanation` on highly-secure items
 
 **API authentication.** Not implemented. Production should use an API Gateway authorizer (Lambda authorizer or Cognito). Exam content leakage before test day is an integrity risk, not just a generic CRUD concern.
 
@@ -108,16 +109,16 @@ Validated with `cdk synth --context env=dev` and `cdk synth --context env=prod`.
 
 ## Trade-offs
 
-**Prioritized depth over breadth.** Four endpoints done thoroughly (validation, errors, tests, infra) rather than six thin stubs. Version and audit APIs deferred. Schema already supports them (`VERSION#` rows + intended `Query`).
+I deliberately prioritized basic CRUD (create, get, update, and list) because those are the paths every exam-item workflow needs first. Version and audit APIs are still TODOs, but the key design already supports them (`VERSION#` rows and a straightforward `Query`).
 
-**DynamoDB storage implemented** for create / get / update / list. `createVersion` / `getAuditTrail` still throw "Not implemented" in storage until those endpoints exist. Note that `updateItem` already creates a new `VERSION#n` row on every call, so version history accumulates automatically. A dedicated `createVersion` endpoint would need distinct semantics beyond what update already covers, which the assignment spec didn't fully define.
+Implementing `DynamoDBStorage` was optional. The starter’s in-memory backend already supports local CRUD, including bumping `metadata.version` on update. I still built the DynamoDB layer so I could validate the single-table design against a real DynamoDB Local instance. That let me confirm `METADATA` + `VERSION#n` rows, the denormalized GSI `status` field, and that CDK’s `USE_DYNAMODB=true` path has a working storage implementation behind it. (`createVersion` / `getAuditTrail` remain unimplemented in DynamoDB until those API routes exist, but updates already append `VERSION#n` history as a side effect of normal edits.)
 
-**Known limitation: `listItems` uses `Scan`.** Correct for small data, but does not scale. GSI exists in CDK and is confirmed populating correctly (verified in DynamoDB Local). Switching `listItems` to `QueryCommand` against it is the top follow-up.
+**Known limitation:** `listItems` still uses a table `Scan`. This is fine for a small dataset and local dev with a few test items, but of course not for production scale. The GSI is defined in CDK (and in the Local create-table), and writes include the top-level `subject` / `status` attributes it needs (confirmed on DynamoDB Local). I have not switched `listItems` to Query that index. With more time, wiring `listItems` to `QueryCommand` on `SubjectStatusIndex` would be the next task.
 
-**Also deferred:** API auth, rate limiting, field-level encryption (see Security).
+**What I'd dig into next on security / abuse protection.** With more time I'd put Cognito (or another API Gateway authorizer) in front so every request is tied to an authenticated user, then enforce role-based access (and `securityLevel` checks). I'd also enable API Gateway throttling / usage plans to limit abusive traffic, and put AWS WAF in front of the API for bot-style and common web attacks before they reach Lambda or DynamoDB. Field-level encryption (like KMS) for highly-secure answers could sit on top of that.
 
 **Testing**
 
 - Unit tests (`pnpm test`): 11 Vitest cases covering create/get/update/list. Success paths, 404s, validation 400s, version bump, and partial-update field preservation. Scoped via `include: ["src/**/*.{test,spec}.ts"]` in `vitest.config.ts` so CDK `cdk.out` / infra `node_modules` aren't picked up.
 - Manual smoke tests: see `API_TESTING.md` (in-memory by default).
-- DynamoDB Local: table and `SubjectStatusIndex` GSI created manually, then verified end-to-end (create → get → update ×4 → list) against the real storage layer with `USE_DYNAMODB=true`. Confirmed via direct `aws dynamodb query` that each update appends a new immutable `VERSION#n` row rather than overwriting history, and that the denormalized `status` attribute is present and correct on every row.
+- DynamoDB Local: table and `SubjectStatusIndex` GSI created manually, then verified end-to-end (create -> get -> update -> list) with `USE_DYNAMODB=true`. After create + two updates, a direct `aws dynamodb query` on the item’s PK showed four rows: `METADATA` (latest) plus immutable `VERSION#1`…`VERSION#3` with top-level `status` matching `metadata.status` on each row.
